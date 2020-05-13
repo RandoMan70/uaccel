@@ -30,6 +30,9 @@ def source(filename):
         vel = float(svel) * 1.85
         yield ltime, vel
 
+#colors=['green', 'red', 'blue']
+colors=['green', 'green', 'green']
+idx = 0
 for filename in sys.argv[1:]:
   print(filename)
   dataX = []
@@ -42,6 +45,10 @@ for filename in sys.argv[1:]:
     else:
       dataX.append(now - startX)
     dataY.append(vel)
-  plt.plot(dataX, dataY)
+  if idx < len(colors):
+    plt.plot(dataX, dataY, color=colors[idx])
+  else:
+    plt.plot(dataX, dataY)
+  idx += 1
 
 plt.show()
