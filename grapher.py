@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 import matplotlib.pyplot as plt
+from scipy.interpolate import UnivariateSpline
+#import scipy.interpolate
+from scipy.optimize import fsolve
+import numpy as np
 import time
 import sys
 
@@ -30,25 +34,64 @@ def source(filename):
         vel = float(svel) * 1.85
         yield ltime, vel
 
-#colors=['green', 'red', 'blue']
-colors=['green', 'green', 'green']
-idx = 0
+def subgraph(dataX, dataY, ymin, ymax):
+  resX = []
+  resY = []
+  for idx in range (0, len(dataX)):
+    if dataY[idx] >= ymin and dataY[idx] <= ymax:
+      resX.append(dataX[idx])
+      resY.append(dataY[idx])
+  return resX, resY
+
+def resolve(dataX, dataY, reqY):
+  for idx in range(1, len(dataX)):
+    if dataY[idx-1] <= reqY and reqY <= dataY[idx]:
+      return dataX[idx]
+
+def get_startx(source, reqY):
+  rawX = []
+  rawY = []
+  for now,vel in source(filename):
+    rawX.append(now)
+    rawY.append(vel)
+
+  sgX, sgY = subgraph(rawX, rawY, 15, 25)
+  xs = np.linspace(sgX[0], sgX[-1], 1000)
+  spl = UnivariateSpline(sgX, sgY)
+  spl.set_smoothing_factor(2)
+  return resolve(xs, spl(xs), 20)
+
+colors=['green', 'red', 'blue',]
+factors=[1, 2, 3, 4, 5]
+color_idx = 0
+fig_speed = plt.figure()
+plot_speed = fig_speed.gca()
+print(plot_speed)
+fig_time = plt.figure()
+plot_time = fig_time.gca()
 for filename in sys.argv[1:]:
+  startX = get_startx(source, 20)
+
+  if color_idx >= len(colors):
+    color = colors[-1]
+  else:
+    color = colors[color_idx]
+    color_idx += 1
+
   print(filename)
   dataX = []
   dataY = []
-  startX = None
   for now,vel in source(filename):
-    if len(dataX) == 0:
-      dataX.append(0)
-      startX = now
-    else:
-      dataX.append(now - startX)
+    dataX.append(now - startX)
     dataY.append(vel)
-  if idx < len(colors):
-    plt.plot(dataX, dataY, color=colors[idx])
-  else:
-    plt.plot(dataX, dataY)
-  idx += 1
+
+  xs = np.linspace(dataX[0], dataX[-1], 1000)
+  spl = UnivariateSpline(dataX, dataY)
+  spl.set_smoothing_factor(10)
+  d = spl.derivative()
+  plot_speed.plot(spl(xs), d(xs), color=color)
+  plot_time.plot(xs, spl(xs), color=color)
+  plot_time.plot(dataX, dataY, 'x', color=color)
+  plot_time.plot(xs, d(xs), color=color)
 
 plt.show()
