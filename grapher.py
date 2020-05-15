@@ -15,6 +15,25 @@ def usage():
 if len(sys.argv) == 1:
   usage()
 
+def altsource(filename):
+  with open(filename, encoding='cp1251') as f:
+    for l in f:
+      kws = l.split(',')
+      t = kws[0]
+      if t == '$GNGGA':
+        time = kws[1]
+        h = int(time[0:2])
+        m = int(time[2:4])
+        s = int(time[4:6])
+        ms = int(time[7:9]) * 10
+        ltime = h * 3600 + m * 60 + s + ms/1000
+        status = kws[2]
+        salt = kws[9]
+        if not salt:
+          salt = '0'
+        alt = float(salt)
+        yield ltime, alt
+
 def source(filename):
   with open(filename, encoding='cp1251') as f:
     for l in f:
@@ -70,6 +89,11 @@ plot_speed.set(xlabel='speed(km/h)', ylabel='acceleration(km/h*s)', title='Accel
 fig_time = plt.figure()
 plot_time = fig_time.gca()
 plot_time.set(xlabel='time(s)', ylabel='speed (km/h) / acceleration(km/h*s)', title='Speed and acceleration over time')
+
+fig_height = plt.figure()
+plot_height = fig_height.gca()
+plot_height.set(xlabel='time(s)', ylabel='altitude(m)', title='Altitude over time')
+
 for filename in sys.argv[1:]:
   startX = get_startx(source, 20)
 
@@ -85,6 +109,20 @@ for filename in sys.argv[1:]:
   for now,vel in source(filename):
     dataX.append(now - startX)
     dataY.append(vel)
+
+  altX = []
+  altY = []
+  for now,alt in altsource(filename):
+    altX.append(now - startX)
+    altY.append(alt)
+
+
+  altxs = np.linspace(altX[0], altX[-1], 1000)
+  altspl = UnivariateSpline(altX, altY)
+  altspl.set_smoothing_factor(10)
+  plot_height.plot(altX, altY, 'x', color=color)
+#  plot_height.plot(altxs, altspl.derivative()(altxs), color=color)
+  plot_height.plot(altxs, altspl(altxs), color=color)
 
   xs = np.linspace(dataX[0], dataX[-1], 1000)
   spl = UnivariateSpline(dataX, dataY)
