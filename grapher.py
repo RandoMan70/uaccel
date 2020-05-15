@@ -66,9 +66,10 @@ factors=[1, 2, 3, 4, 5]
 color_idx = 0
 fig_speed = plt.figure()
 plot_speed = fig_speed.gca()
-print(plot_speed)
+plot_speed.set(xlabel='speed(km/h)', ylabel='acceleration(km/h*s)', title='Acceleration over speed')
 fig_time = plt.figure()
 plot_time = fig_time.gca()
+plot_time.set(xlabel='time(s)', ylabel='speed (km/h) / acceleration(km/h*s)', title='Speed and acceleration over time')
 for filename in sys.argv[1:]:
   startX = get_startx(source, 20)
 
